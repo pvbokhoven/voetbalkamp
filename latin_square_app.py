@@ -572,9 +572,10 @@ def main():
         col_sums = {}
         for j in range(n):
             col_sums[f"Pos {j + 1}"] = sum(square[i][j] + 1 for i in range(n))
-        col_sums["Σ Rij"] = ""
+        col_sums["Σ Rij"] = None
         sum_row = pd.DataFrame(col_sums, index=["Σ Kolom"])
         ls_df = pd.concat([ls_df, sum_row])
+        ls_df = ls_df.astype(object).fillna("")
 
         def highlight_sums(s):
             styles = pd.DataFrame("", index=s.index, columns=s.columns)
