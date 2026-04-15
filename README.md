@@ -18,6 +18,9 @@ Streamlit app voor het genereren van een spelschema voor een voetbalkamp (of and
 
 ## Vereisten
 
+- [Python 3.8+](https://www.python.org/downloads/)
+- pip (wordt standaard meegeleverd met Python)
+
 ```
 pip install streamlit pandas openpyxl
 ```
