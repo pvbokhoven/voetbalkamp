@@ -8,7 +8,7 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, send_from_directory
 
 app = Flask(
     __name__,
@@ -321,6 +321,15 @@ def to_excel(df, n_duo, square, slot_labels, team_names, duo_names, solo_names, 
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(
+        os.path.join(os.path.dirname(__file__), '..', 'static'),
+        'favicon.svg',
+        mimetype='image/svg+xml'
+    )
 
 
 @app.route("/api/generate", methods=["POST"])
