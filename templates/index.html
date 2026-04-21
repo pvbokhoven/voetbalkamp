@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voetbalkamp Schema Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & base ───────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f1f5f9;
+    color: #0f172a;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ─────────────────────────────────────────────────────────── */
+  #sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  #main {
+    flex: 1;
+    padding: 2rem 2.5rem;
+    overflow-y: auto;
+    min-width: 0;
+  }
+
+  /* ── Sidebar logo area ───────────────────────────────────────────────── */
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: 1.25rem 1.25rem 1.1rem;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+  }
+  .sidebar-logo img { width: 36px; height: 36px; object-fit: contain; }
+  .sidebar-logo-title {
+    font-size: .8rem;
+    font-weight: 700;
+    color: #1e3a5f;
+    line-height: 1.3;
+    letter-spacing: -.01em;
+  }
+
+  /* ── Sidebar scrollable content ─────────────────────────────────────── */
+  .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+  }
+
+  /* ── Sidebar section labels ──────────────────────────────────────────── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748b;
+    margin-top: .3rem;
+    display: block;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: .15rem 0;
+  }
+
+  /* ── Labels & inputs ─────────────────────────────────────────────────── */
+  label {
+    display: block;
+    font-size: .8rem;
+    font-weight: 500;
+    color: #0f172a;
+    margin-bottom: .3rem;
+  }
+
+  input[type="number"],
+  input[type="text"],
+  input[type="time"] {
+    width: 100%;
+    height: 36px;
+    padding: 0 .6rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: .83rem;
+    font-family: inherit;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  input[type="number"]:focus,
+  input[type="text"]:focus,
+  input[type="time"]:focus {
+    border-color: #2563eb;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+  }
+
+  /* ── Caption lines ───────────────────────────────────────────────────── */
+  .caption {
+    font-size: .74rem;
+    color: #64748b;
+    margin-top: .2rem;
+    line-height: 1.4;
+  }
+  .caption.error  { color: #dc2626; font-weight: 500; }
+  .caption.success { color: #16a34a; font-weight: 500; }
+
+  /* ── Toggle switch (pill) ─────────────────────────────────────────────── */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin-bottom: .1rem;
+  }
+  .toggle-row label {
+    margin: 0;
+    font-size: .82rem;
+    font-weight: 500;
+    color: #0f172a;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* Hide native checkbox, show pill */
+  .toggle-row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: #cbd5e1;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    transition: background .2s;
+    outline: none;
+  }
+  .toggle-row input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    transition: transform .2s;
+  }
+  .toggle-row input[type="checkbox"]:checked {
+    background: #2563eb;
+  }
+  .toggle-row input[type="checkbox"]:checked::after {
+    transform: translateX(16px);
+  }
+  .toggle-row input[type="checkbox"]:focus {
+    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+  }
+
+  /* ── Name input rows ─────────────────────────────────────────────────── */
+  .name-inputs { display: flex; flex-direction: column; gap: .3rem; margin-top: .2rem; }
+  .name-input-row { display: flex; align-items: center; gap: .4rem; }
+  .name-input-row span {
+    font-size: .74rem;
+    color: #64748b;
+    min-width: 48px;
+    font-weight: 500;
+  }
+  .name-input-row input { flex: 1; }
+
+  /* ── Time / seed grids ───────────────────────────────────────────────── */
+  .time-grid   { display: grid; grid-template-columns: 1fr 1fr;     gap: .45rem; }
+  .time-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .45rem; }
+
+  /* ── Generate button ─────────────────────────────────────────────────── */
+  #btn-generate {
+    margin-top: .4rem;
+    width: 100%;
+    height: 40px;
+    padding: 0 1rem;
+    background: #1e3a5f;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .88rem;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+    letter-spacing: .01em;
+  }
+  #btn-generate:hover   { background: #162e4d; }
+  #btn-generate:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Main header ─────────────────────────────────────────────────────── */
+  .main-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .main-header img { width: 48px; height: 48px; object-fit: contain; }
+  .main-header h1 {
+    font-size: 1.4rem;
+    color: #1e3a5f;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -.02em;
+  }
+  .main-header p {
+    font-size: .8rem;
+    color: #64748b;
+    margin-top: .2rem;
+    font-weight: 400;
+  }
+
+  /* ── Banners ─────────────────────────────────────────────────────────── */
+  .banner {
+    padding: .75rem 1rem;
+    border-radius: 8px;
+    font-size: .86rem;
+    margin-bottom: 1.25rem;
+    border-left: 4px solid transparent;
+    line-height: 1.5;
+  }
+  .banner.info    { background: #eff6ff; border-left-color: #2563eb; color: #1e3a5f; }
+  .banner.error   { background: #fef2f2; border-left-color: #dc2626; color: #7f1d1d; }
+  .banner.success { background: #f0fdf4; border-left-color: #16a34a; color: #14532d; }
+
+  /* ── Metric cards ────────────────────────────────────────────────────── */
+  .metrics-row {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .metric-card {
+    flex: 1;
+    min-width: 90px;
+    background: #fff;
+    border-radius: 8px;
+    padding: .75rem 1rem;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .metric-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #1e3a5f;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+  }
+  .metric-label {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    font-weight: 600;
+    margin-top: .25rem;
+  }
+
+  /* ── Section titles ──────────────────────────────────────────────────── */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin: 1.5rem 0 .6rem;
+  }
+
+  /* ── Tables ──────────────────────────────────────────────────────────── */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: .83rem;
+    min-width: 400px;
+    background: #fff;
+  }
+  thead th {
+    background: #1e3a5f;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    white-space: nowrap;
+    border: 1px solid #1e3a5f;
+  }
+  thead th.solo-col {
+    background: #fff;
+    color: #f59e0b;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+  }
+  tbody td {
+    padding: 10px 14px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+    color: #0f172a;
+  }
+  tbody tr:nth-child(even) td { background: #f8fafc; }
+  tbody tr:nth-child(odd)  td { background: #fff; }
+  tbody td.solo-cell { background: #fffbeb !important; color: #92400e; }
+  tbody td.idx-cell {
+    background: #334155 !important;
+    color: #fff;
+    font-weight: 600;
+    white-space: nowrap;
+    border-color: #334155;
+  }
+  /* Latin square sum cells */
+  td.sum-cell, th.sum-col {
+    background: #1e3a5f !important;
+    color: #fff !important;
+    font-weight: 700;
+    border-color: #1e3a5f !important;
+  }
+  tr.sum-row td {
+    background: #1e3a5f !important;
+    color: #fff !important;
+    font-weight: 700;
+    border-color: #1e3a5f !important;
+  }
+
+  /* ── Tabs (underline style) ───────────────────────────────────────────── */
+  .tab-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 0;
+  }
+  .tab-btn {
+    padding: .55rem .9rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    font-size: .875rem;
+    font-family: inherit;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    transition: color .12s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: #0f172a; }
+  .tab-btn.active {
+    color: #1e3a5f;
+    font-weight: 600;
+    border-bottom: 2px solid #1e3a5f;
+  }
+  .tab-panel { display: none; padding-top: 1rem; }
+  .tab-panel.active { display: block; }
+
+  /* ── Game descriptions ───────────────────────────────────────────────── */
+  textarea.desc-area {
+    width: 100%;
+    min-height: 110px;
+    padding: .6rem .75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: .86rem;
+    font-family: inherit;
+    color: #0f172a;
+    background: #fff;
+    resize: vertical;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    line-height: 1.5;
+  }
+  textarea.desc-area:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+  }
+
+  /* ── Collapsible verification ────────────────────────────────────────── */
+  .collapsible-hdr {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    cursor: pointer;
+    user-select: none;
+    padding: .75rem 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    font-weight: 600;
+    font-size: .875rem;
+    color: #1e3a5f;
+    transition: background .12s;
+  }
+  .collapsible-hdr:hover { background: #f8fafc; }
+  .collapsible-hdr .chevron {
+    font-size: .75rem;
+    color: #64748b;
+    transition: transform .2s;
+    display: inline-block;
+  }
+  .collapsible-hdr.open .chevron { transform: rotate(90deg); }
+  .collapsible-body { display: none; padding: 1rem 0 0; }
+  .collapsible-body.open { display: block; }
+
+  /* ── Download section ────────────────────────────────────────────────── */
+  .download-row {
+    display: flex;
+    gap: .6rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-top: .5rem;
+  }
+  .download-row .field { flex: 1; min-width: 220px; }
+  #btn-download {
+    height: 36px;
+    padding: 0 1.25rem;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .86rem;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  #btn-download:hover    { background: #1d4ed8; }
+  #btn-download:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Team schedule table (per team) ──────────────────────────────────── */
+  .team-table td:nth-child(1) { font-weight: 600; }
+
+  /* ── Responsive ──────────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar {
+      width: 100%;
+      min-width: 0;
+      height: auto;
+      position: static;
+      border-right: none;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .sidebar-content { padding-bottom: 1.25rem; }
+    #main { padding: 1.25rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ SIDEBAR ═══════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <img src="/static/logo-stiphout-vooruit.svg" onerror="this.style.display='none'" alt="Logo">
+    <div class="sidebar-logo-title">Voetbalkamp<br>Schema Generator</div>
+  </div>
+
+  <div class="sidebar-content">
+
+    <span class="section-label">Teams</span>
+
+    <div>
+      <label for="inp-n">Aantal teams</label>
+      <input type="number" id="inp-n" min="2" max="20" value="6">
+    </div>
+
+    <div class="toggle-row">
+      <input type="checkbox" id="tog-teams" checked>
+      <label for="tog-teams">Standaard teamnamen</label>
+    </div>
+    <div id="team-names-wrap" class="name-inputs" style="display:none;"></div>
+    <div id="team-names-caption" class="caption"></div>
+
+    <hr class="divider">
+    <span class="section-label">Speltypen</span>
+
+    <div>
+      <label for="inp-nduo">Duo-spellen (2 teams)</label>
+      <input type="number" id="inp-nduo" min="0" max="10" value="3">
+    </div>
+    <div id="game-formula-caption" class="caption"></div>
+
+    <hr class="divider">
+
+    <!-- Duo game names -->
+    <div id="duo-names-section">
+      <span class="section-label">Duo-spelnamen</span>
+      <div class="toggle-row" style="margin-top:.3rem">
+        <input type="checkbox" id="tog-duo" checked>
+        <label for="tog-duo">Standaard duo-namen</label>
+      </div>
+      <div id="duo-names-wrap" class="name-inputs" style="display:none;"></div>
+      <div id="duo-names-caption" class="caption"></div>
+    </div>
+
+    <!-- Solo game names -->
+    <div id="solo-names-section" style="display:none;">
+      <hr class="divider">
+      <span class="section-label">Solo-spelnamen</span>
+      <div class="toggle-row" style="margin-top:.3rem">
+        <input type="checkbox" id="tog-solo" checked>
+        <label for="tog-solo">Standaard solo-namen</label>
+      </div>
+      <div id="solo-names-wrap" class="name-inputs" style="display:none;"></div>
+      <div id="solo-names-caption" class="caption"></div>
+    </div>
+
+    <hr class="divider">
+    <span class="section-label">Tijdslots</span>
+
+    <div class="time-grid">
+      <div>
+        <label for="inp-start">Starttijd</label>
+        <input type="time" id="inp-start" value="09:00">
+      </div>
+      <div>
+        <label for="inp-seed">Variatie (seed)</label>
+        <input type="number" id="inp-seed" min="0" max="9999" value="42">
+      </div>
+    </div>
+    <div class="time-grid">
+      <div>
+        <label for="inp-gamemin">Speeltijd (min)</label>
+        <input type="number" id="inp-gamemin" min="1" max="120" value="20">
+      </div>
+      <div>
+        <label for="inp-switchmin">Wisseltijd (min)</label>
+        <input type="number" id="inp-switchmin" min="0" max="60" value="5">
+      </div>
+    </div>
+    <div id="time-caption" class="caption"></div>
+
+    <button id="btn-generate">Genereer schema</button>
+
+  </div><!-- /.sidebar-content -->
+</aside>
+
+<!-- ═══════════════════════ MAIN ══════════════════════════════════════════ -->
+<main id="main">
+  <div class="main-header">
+    <img src="/static/logo-stiphout-vooruit.svg" onerror="this.style.display='none'" alt="Logo">
+    <div>
+      <h1>Voetbalkamp Schema Generator</h1>
+      <p>Latin Square &mdash; elk team speelt elk spel precies 1&times; per ronde</p>
+    </div>
+  </div>
+
+  <div id="server-error" class="banner error" style="display:none;"></div>
+
+  <div id="info-banner" class="banner info">
+    Vul de instellingen in het zijpaneel in en klik op <strong>Genereer schema</strong>.
+  </div>
+
+  <!-- Results (hidden until generated) -->
+  <div id="results" style="display:none;">
+
+    <!-- Metrics -->
+    <div class="metrics-row">
+      <div class="metric-card"><div class="metric-value" id="m-teams">—</div><div class="metric-label">Teams</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-duo">—</div><div class="metric-label">Duo-spellen</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-solo">—</div><div class="metric-label">Solo-spellen</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-rondes">—</div><div class="metric-label">Rondes</div></div>
+      <div class="metric-card"><div class="metric-value" id="m-end">—</div><div class="metric-label">Eindtijd</div></div>
+    </div>
+
+    <!-- Schedule table -->
+    <div class="section-title">Schema</div>
+    <div class="table-wrap">
+      <table id="schedule-table"></table>
+    </div>
+
+    <!-- Game descriptions -->
+    <div class="section-title">Spelbeschrijvingen</div>
+    <div class="tab-strip" id="desc-tabs"></div>
+    <div id="desc-panels"></div>
+
+    <!-- Per-team schedule -->
+    <div class="section-title">Schema per team</div>
+    <div class="tab-strip" id="team-tabs"></div>
+    <div id="team-panels"></div>
+
+    <!-- Verification (collapsible) -->
+    <div style="margin-top:1.5rem;">
+      <div class="collapsible-hdr" id="verif-hdr">
+        <span class="chevron">&#9658;</span>
+        Verificatie
+      </div>
+      <div class="collapsible-body" id="verif-body">
+        <div id="verif-success" class="banner success" style="margin-bottom:.75rem;"></div>
+        <div class="section-title" style="margin-top:0;">Latin Square (teamnummers)</div>
+        <div id="verif-caption" class="caption" style="margin-bottom:.6rem;"></div>
+        <div class="table-wrap">
+          <table id="ls-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download -->
+    <div class="section-title">Download</div>
+    <div class="download-row">
+      <div class="field">
+        <label for="inp-filename">Bestandsnaam</label>
+        <input type="text" id="inp-filename" placeholder="spellenschema_6_teams_...">
+      </div>
+      <button id="btn-download">&#8595; Download als Excel</button>
+    </div>
+
+  </div><!-- /#results -->
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   State
+═══════════════════════════════════════════════════════════════════════════ */
+let _lastData = null;   // last successful generate response
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Utility helpers
+═══════════════════════════════════════════════════════════════════════════ */
+function $(id) { return document.getElementById(id); }
+
+function buildTabs(stripId, panelId, items, renderFn) {
+  const strip = $(stripId);
+  const panels = $(panelId);
+  strip.innerHTML = '';
+  panels.innerHTML = '';
+  items.forEach((item, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (idx === 0 ? ' active' : '');
+    btn.textContent = item;
+    btn.addEventListener('click', () => {
+      strip.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      panels.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      panels.children[idx].classList.add('active');
+    });
+    strip.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.className = 'tab-panel' + (idx === 0 ? ' active' : '');
+    renderFn(panel, item, idx);
+    panels.appendChild(panel);
+  });
+}
+
+function padTwo(n) { return String(n).padStart(2, '0'); }
+
+function defaultFilename(n) {
+  const now = new Date();
+  const ds = `${now.getFullYear()}${padTwo(now.getMonth()+1)}${padTwo(now.getDate())}_${padTwo(now.getHours())}${padTwo(now.getMinutes())}`;
+  return `spellenschema_${n}_teams_${ds}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sidebar logic: dynamic inputs
+═══════════════════════════════════════════════════════════════════════════ */
+function getN()    { return Math.max(2, Math.min(20, parseInt($('inp-n').value) || 6)); }
+function getNDuo() { return Math.max(0, parseInt($('inp-nduo').value) || 0); }
+
+function rebuildTeamNames() {
+  const n = getN();
+  const useDefault = $('tog-teams').checked;
+  const wrap = $('team-names-wrap');
+  const cap  = $('team-names-caption');
+
+  if (useDefault) {
+    wrap.style.display = 'none';
+    const names = Array.from({length: n}, (_, i) => `Team ${i+1}`);
+    cap.textContent = names.join(', ');
+  } else {
+    wrap.style.display = 'flex';
+    // Preserve existing values
+    const existing = Array.from(wrap.querySelectorAll('input')).map(i => i.value);
+    wrap.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const row = document.createElement('div');
+      row.className = 'name-input-row';
+      const span = document.createElement('span');
+      span.textContent = `Team ${i+1}`;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = existing[i] || `Team ${i+1}`;
+      inp.placeholder = `Team ${i+1}`;
+      row.appendChild(span);
+      row.appendChild(inp);
+      wrap.appendChild(row);
+    }
+    cap.textContent = '';
+  }
+}
+
+function rebuildDuoNames() {
+  const n_duo = getNDuo();
+  const useDefault = $('tog-duo').checked;
+  const wrap = $('duo-names-wrap');
+  const cap  = $('duo-names-caption');
+  const section = $('duo-names-section');
+
+  section.style.display = n_duo > 0 ? '' : 'none';
+  if (n_duo === 0) return;
+
+  if (useDefault) {
+    wrap.style.display = 'none';
+    const names = Array.from({length: n_duo}, (_, i) => `Duo spel ${i+1}`);
+    cap.textContent = names.join(', ');
+  } else {
+    wrap.style.display = 'flex';
+    const existing = Array.from(wrap.querySelectorAll('input')).map(i => i.value);
+    wrap.innerHTML = '';
+    for (let i = 0; i < n_duo; i++) {
+      const row = document.createElement('div');
+      row.className = 'name-input-row';
+      const span = document.createElement('span');
+      span.textContent = `Duo ${i+1}`;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = existing[i] || `Duo spel ${i+1}`;
+      inp.placeholder = `Duo spel ${i+1}`;
+      row.appendChild(span);
+      row.appendChild(inp);
+      wrap.appendChild(row);
+    }
+    cap.textContent = '';
+  }
+}
+
+function rebuildSoloNames() {
+  const n = getN();
+  const n_duo = getNDuo();
+  const n_solo = n - 2 * n_duo;
+  const useDefault = $('tog-solo').checked;
+  const wrap = $('solo-names-wrap');
+  const cap  = $('solo-names-caption');
+  const section = $('solo-names-section');
+
+  section.style.display = n_solo > 0 ? '' : 'none';
+  if (n_solo <= 0) return;
+
+  if (useDefault) {
+    wrap.style.display = 'none';
+    const names = Array.from({length: n_solo}, (_, i) => `Solo spel ${i+1}`);
+    cap.textContent = names.join(', ');
+  } else {
+    wrap.style.display = 'flex';
+    const existing = Array.from(wrap.querySelectorAll('input')).map(i => i.value);
+    wrap.innerHTML = '';
+    for (let i = 0; i < n_solo; i++) {
+      const row = document.createElement('div');
+      row.className = 'name-input-row';
+      const span = document.createElement('span');
+      span.textContent = `Solo ${i+1}`;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = existing[i] || `Solo spel ${i+1}`;
+      inp.placeholder = `Solo spel ${i+1}`;
+      row.appendChild(span);
+      row.appendChild(inp);
+      wrap.appendChild(row);
+    }
+    cap.textContent = '';
+  }
+}
+
+function updateGameFormula() {
+  const n = getN();
+  const n_duo = getNDuo();
+  const n_solo = n - 2 * n_duo;
+  const cap = $('game-formula-caption');
+
+  if (n_solo < 0) {
+    cap.textContent = `Te veel duo-spellen: ${n_duo}×2 = ${2*n_duo} > ${n} teams`;
+    cap.className = 'caption error';
+  } else {
+    cap.textContent = `${n_duo} duo × 2 + ${n_solo} solo = ${2*n_duo + n_solo} teams`;
+    cap.className = 'caption success';
+  }
+}
+
+function updateTimeCaption() {
+  const n = getN();
+  const start = $('inp-start').value || '09:00';
+  const game_min = parseInt($('inp-gamemin').value) || 20;
+  const switch_min = parseInt($('inp-switchmin').value) || 5;
+
+  const total_min = n * (game_min + switch_min) - switch_min;
+  const [hh, mm] = start.split(':').map(Number);
+  const startTotal = hh * 60 + mm;
+  const endTotal = startTotal + total_min;
+  const endH = Math.floor(endTotal / 60) % 24;
+  const endM = endTotal % 60;
+  $('time-caption').textContent =
+    `Eindtijd: ${padTwo(endH)}:${padTwo(endM)} · Totaal: ${total_min} min`;
+}
+
+function collectTeamNames() {
+  const n = getN();
+  if ($('tog-teams').checked) {
+    return Array.from({length: n}, (_, i) => `Team ${i+1}`);
+  }
+  return Array.from($('team-names-wrap').querySelectorAll('input'))
+    .map((inp, i) => inp.value.trim() || `Team ${i+1}`);
+}
+
+function collectDuoNames() {
+  const n_duo = getNDuo();
+  if ($('tog-duo').checked) {
+    return Array.from({length: n_duo}, (_, i) => `Duo spel ${i+1}`);
+  }
+  return Array.from($('duo-names-wrap').querySelectorAll('input'))
+    .map((inp, i) => inp.value.trim() || `Duo spel ${i+1}`);
+}
+
+function collectSoloNames() {
+  const n = getN();
+  const n_duo = getNDuo();
+  const n_solo = n - 2 * n_duo;
+  if (n_solo <= 0) return [];
+  if ($('tog-solo').checked) {
+    return Array.from({length: n_solo}, (_, i) => `Solo spel ${i+1}`);
+  }
+  return Array.from($('solo-names-wrap').querySelectorAll('input'))
+    .map((inp, i) => inp.value.trim() || `Solo spel ${i+1}`);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Render results
+═══════════════════════════════════════════════════════════════════════════ */
+function renderResults(data) {
+  _lastData = data;
+
+  // Metrics
+  $('m-teams').textContent   = data.n;
+  $('m-duo').textContent     = data.n_duo;
+  $('m-solo').textContent    = data.n_solo;
+  $('m-rondes').textContent  = data.n;
+  $('m-end').textContent     = data.end_time;
+
+  // Schedule table
+  renderScheduleTable(data);
+
+  // Game descriptions
+  buildTabs('desc-tabs', 'desc-panels',
+    [...data.duo_names, ...data.solo_names],
+    (panel, name, idx) => {
+      const ta = document.createElement('textarea');
+      ta.className = 'desc-area';
+      ta.dataset.game = name;
+      ta.placeholder = 'Voer hier de spelregels / beschrijving in...';
+      panel.appendChild(ta);
+    }
+  );
+
+  // Per-team schedule
+  buildTabs('team-tabs', 'team-panels',
+    data.team_names,
+    (panel, name, idx) => {
+      const schedule = data.team_schedules[name] || [];
+      const tbl = document.createElement('table');
+      tbl.className = 'team-table';
+      tbl.innerHTML = `<thead><tr><th>Tijdslot</th><th>Spel</th><th>Tegenstander</th></tr></thead>`;
+      const tbody = document.createElement('tbody');
+      schedule.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="idx-cell">${row.slot}</td><td>${row.game}</td><td>${row.opponent || '—'}</td>`;
+        tbody.appendChild(tr);
+      });
+      tbl.appendChild(tbody);
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      wrap.appendChild(tbl);
+      panel.appendChild(wrap);
+    }
+  );
+
+  // Verification
+  $('verif-success').textContent =
+    'Latin Square geverifieerd: elk team speelt in elke ronde precies 1×, en elk team komt op elke positie precies 1× voor.';
+  $('verif-caption').textContent =
+    `Verwachte som per rij en kolom: 1 + 2 + ... + ${data.n} = ${data.expected_sum}`;
+  renderLSTable(data);
+
+  // Default filename
+  $('inp-filename').value = defaultFilename(data.n);
+
+  // Show results, hide info
+  $('info-banner').style.display = 'none';
+  $('server-error').style.display = 'none';
+  $('results').style.display = '';
+}
+
+function renderScheduleTable(data) {
+  const tbl = $('schedule-table');
+  const { df_columns, df_rows, slot_labels, n_duo, solo_names } = data;
+  const soloSet = new Set(solo_names);
+
+  let html = '<thead><tr><th>Tijdslot</th>';
+  df_columns.forEach(col => {
+    const cls = soloSet.has(col) ? ' class="solo-col"' : '';
+    html += `<th${cls}>${col}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  df_rows.forEach((row, i) => {
+    html += `<tr><td class="idx-cell">${slot_labels[i]}</td>`;
+    row.forEach((cell, j) => {
+      const isSolo = soloSet.has(df_columns[j]);
+      const cls = isSolo ? ' class="solo-cell"' : '';
+      html += `<td${cls}>${cell}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody>';
+
+  tbl.innerHTML = html;
+}
+
+function renderLSTable(data) {
+  const { n, ls_rows, ls_col_sums, ls_row_sums, expected_sum } = data;
+  const tbl = $('ls-table');
+
+  let html = '<thead><tr><th>Ronde</th>';
+  for (let j = 0; j < n; j++) html += `<th>Pos ${j+1}</th>`;
+  html += '<th class="sum-col">Σ Rij</th></tr></thead><tbody>';
+
+  ls_rows.forEach((row, i) => {
+    html += `<tr><td class="idx-cell">Ronde ${i+1}</td>`;
+    row.forEach(v => { html += `<td>${v}</td>`; });
+    html += `<td class="sum-cell">${ls_row_sums[i]}</td></tr>`;
+  });
+
+  // Column sums row
+  html += '<tr class="sum-row"><td class="sum-cell">Σ Kolom</td>';
+  ls_col_sums.forEach(s => { html += `<td class="sum-cell">${s}</td>`; });
+  html += '<td class="sum-cell"></td></tr>';
+  html += '</tbody>';
+
+  tbl.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Generate
+═══════════════════════════════════════════════════════════════════════════ */
+async function generate() {
+  const n     = getN();
+  const n_duo = getNDuo();
+  const n_solo = n - 2 * n_duo;
+
+  if (n_solo < 0) {
+    $('server-error').textContent = `Te veel duo-spellen voor het aantal teams (${n_duo}×2 > ${n}).`;
+    $('server-error').style.display = '';
+    return;
+  }
+
+  const btn = $('btn-generate');
+  btn.disabled = true;
+  btn.textContent = 'Bezig…';
+  $('server-error').style.display = 'none';
+
+  const payload = {
+    n,
+    seed:        parseInt($('inp-seed').value) || 42,
+    n_duo,
+    n_solo,
+    team_names:  collectTeamNames(),
+    duo_names:   collectDuoNames(),
+    solo_names:  collectSoloNames(),
+    start_time:  $('inp-start').value || '09:00',
+    game_min:    parseInt($('inp-gamemin').value) || 20,
+    switch_min:  parseInt($('inp-switchmin').value) || 5,
+  };
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const json = await resp.json();
+    if (!resp.ok) {
+      $('server-error').textContent = json.error || 'Onbekende fout.';
+      $('server-error').style.display = '';
+    } else {
+      renderResults(json);
+    }
+  } catch (err) {
+    $('server-error').textContent = 'Netwerkfout: ' + err.message;
+    $('server-error').style.display = '';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Genereer schema';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Download
+═══════════════════════════════════════════════════════════════════════════ */
+async function download() {
+  if (!_lastData) return;
+
+  const btn = $('btn-download');
+  btn.disabled = true;
+  btn.textContent = 'Bezig…';
+
+  // Collect current descriptions from text areas
+  const game_descriptions = {};
+  document.querySelectorAll('textarea.desc-area').forEach(ta => {
+    game_descriptions[ta.dataset.game] = ta.value;
+  });
+
+  const file_name = ($('inp-filename').value.trim() || defaultFilename(_lastData.n));
+
+  const payload = {
+    ..._lastData,
+    game_descriptions,
+    file_name,
+  };
+
+  try {
+    const resp = await fetch('/api/download', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) {
+      const json = await resp.json();
+      alert('Fout bij downloaden: ' + (json.error || resp.statusText));
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file_name.endsWith('.xlsx') ? file_name : file_name + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Netwerkfout: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↓ Download als Excel';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Collapsible verification
+═══════════════════════════════════════════════════════════════════════════ */
+$('verif-hdr').addEventListener('click', () => {
+  $('verif-hdr').classList.toggle('open');
+  $('verif-body').classList.toggle('open');
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Wire up events
+═══════════════════════════════════════════════════════════════════════════ */
+$('inp-n').addEventListener('input', () => {
+  rebuildTeamNames();
+  updateGameFormula();
+  rebuildDuoNames();
+  rebuildSoloNames();
+  updateTimeCaption();
+});
+$('tog-teams').addEventListener('change', rebuildTeamNames);
+$('inp-nduo').addEventListener('input', () => {
+  updateGameFormula();
+  rebuildDuoNames();
+  rebuildSoloNames();
+});
+$('tog-duo').addEventListener('change', rebuildDuoNames);
+$('tog-solo').addEventListener('change', rebuildSoloNames);
+$('inp-start').addEventListener('input', updateTimeCaption);
+$('inp-gamemin').addEventListener('input', updateTimeCaption);
+$('inp-switchmin').addEventListener('input', updateTimeCaption);
+$('btn-generate').addEventListener('click', generate);
+$('btn-download').addEventListener('click', download);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Init
+═══════════════════════════════════════════════════════════════════════════ */
+rebuildTeamNames();
+updateGameFormula();
+rebuildDuoNames();
+rebuildSoloNames();
+updateTimeCaption();
+</script>
+</body>
+</html>
