@@ -223,6 +223,28 @@
     margin-bottom: 1.5rem;
     border-bottom: 1px solid #e2e8f0;
   }
+  .main-header-left { display: flex; align-items: center; gap: 1rem; flex: 1; }
+  #btn-reset {
+    display: none;
+    align-items: center;
+    gap: .35rem;
+    padding: .4rem .85rem;
+    background: transparent;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  #btn-reset:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: #fef2f2;
+  }
   .main-header img { width: 48px; height: 48px; object-fit: contain; }
   .main-header h1 {
     font-size: 1.4rem;
@@ -446,6 +468,54 @@
   .collapsible-body { display: none; padding: 1rem 0 0; }
   .collapsible-body.open { display: block; }
 
+  /* ── Help cards ──────────────────────────────────────────────────────── */
+  .help-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .help-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 1.25rem 1.4rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .help-card-icon {
+    font-size: 1.6rem;
+    margin-bottom: .5rem;
+    line-height: 1;
+  }
+  .help-card-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin-bottom: .5rem;
+  }
+  .help-card-text {
+    font-size: .86rem;
+    color: #475569;
+    line-height: 1.6;
+  }
+  .help-formula {
+    background: #f1f5f9;
+    border-left: 3px solid #2563eb;
+    padding: .5rem .8rem;
+    border-radius: 0 6px 6px 0;
+    font-size: .88rem;
+    font-weight: 600;
+    color: #1e3a5f;
+    margin: .5rem 0;
+    font-family: 'Courier New', monospace;
+  }
+  .help-list {
+    font-size: .86rem;
+    color: #475569;
+    line-height: 1.7;
+    padding-left: 1.2rem;
+  }
+  .help-list li { margin-bottom: .15rem; }
+
   /* ── Download section ────────────────────────────────────────────────── */
   .download-row {
     display: flex;
@@ -604,17 +674,84 @@
 <!-- ═══════════════════════ MAIN ══════════════════════════════════════════ -->
 <main id="main">
   <div class="main-header">
-    <img src="/static/logo-stiphout-vooruit.svg" onerror="this.style.display='none'" alt="Logo">
-    <div>
-      <h1>Voetbalkamp Schema Generator</h1>
-      <p>Latin Square &mdash; elk team speelt elk spel precies 1&times; per ronde</p>
+    <div class="main-header-left">
+      <img src="/static/logo-stiphout-vooruit.svg" onerror="this.style.display='none'" alt="Logo">
+      <div>
+        <h1>Voetbalkamp Schema Generator</h1>
+        <p>Latin Square &mdash; elk team speelt elk spel precies 1&times; per ronde</p>
+      </div>
     </div>
+    <button id="btn-reset" title="Instellingen resetten en opnieuw beginnen">
+      ↺ Reset
+    </button>
   </div>
 
   <div id="server-error" class="banner error" style="display:none;"></div>
 
-  <div id="info-banner" class="banner info">
-    Vul de instellingen in het zijpaneel in en klik op <strong>Genereer schema</strong>.
+  <div id="info-banner">
+
+    <div class="banner info" style="margin-bottom:1.5rem;">
+      Vul de instellingen in het zijpaneel in en klik op <strong>Genereer schema</strong> om een schema te maken.
+    </div>
+
+    <div class="help-grid">
+
+      <!-- Wat doet deze app? -->
+      <div class="help-card">
+        <div class="help-card-icon">📋</div>
+        <h3 class="help-card-title">Wat doet deze app?</h3>
+        <p class="help-card-text">
+          De app genereert automatisch een <strong>speelschema voor een kamp of toernooi</strong>.
+          Elk team speelt elk spel precies één keer, en in elke ronde is elk team precies één keer actief.
+          Het schema is gebaseerd op een wiskundig concept: het <em>Latin Square</em>.
+        </p>
+      </div>
+
+      <!-- De rekenregel -->
+      <div class="help-card">
+        <div class="help-card-icon">🧮</div>
+        <h3 class="help-card-title">De rekenregel</h3>
+        <p class="help-card-text">
+          Het aantal teams bepaalt het aantal rondes én het aantal spellen. De volgende formule moet altijd kloppen:
+        </p>
+        <div class="help-formula">
+          (duo-spellen × 2) + solo-spellen = aantal teams
+        </div>
+        <p class="help-card-text" style="margin-top:.6rem;">
+          Bij een <strong>duo-spel</strong> spelen 2 teams tegelijk (bijv. voetbal). Bij een <strong>solo-spel</strong> is 1 team actief (bijv. een parcours). Zo is in elke ronde elk team precies één keer bezig.
+        </p>
+      </div>
+
+      <!-- Voorbeeld -->
+      <div class="help-card">
+        <div class="help-card-icon">⚽</div>
+        <h3 class="help-card-title">Voorbeeld</h3>
+        <p class="help-card-text">Je hebt <strong>6 teams</strong> en kiest:</p>
+        <ul class="help-list">
+          <li>3 duo-spellen (voetbal, trefbal, koppen) → 3 × 2 = 6</li>
+          <li>0 solo-spellen</li>
+          <li>Totaal: 6 teams ✓</li>
+        </ul>
+        <p class="help-card-text" style="margin-top:.5rem;">
+          Of: <strong>5 teams</strong>, 2 duo-spellen + 1 solo-spel → 2×2 + 1 = 5 ✓
+        </p>
+      </div>
+
+      <!-- Zo gebruik je de app -->
+      <div class="help-card">
+        <div class="help-card-icon">🚀</div>
+        <h3 class="help-card-title">Zo gebruik je de app</h3>
+        <ol class="help-list">
+          <li>Kies het <strong>aantal teams</strong> en geef ze optioneel een naam</li>
+          <li>Stel het aantal <strong>duo- en solo-spellen</strong> in (formule moet kloppen)</li>
+          <li>Geef de <strong>spelnamen</strong> en een <strong>starttijd</strong> op</li>
+          <li>Voeg optioneel een <strong>pauze</strong> in na een bepaalde ronde</li>
+          <li>Klik op <strong>Genereer schema</strong></li>
+          <li>Download het schema als <strong>Excel</strong> met tabbladen per spel en per team</li>
+        </ol>
+      </div>
+
+    </div>
   </div>
 
   <!-- Results (hidden until generated) -->
@@ -976,6 +1113,7 @@ function renderResults(data) {
   $('info-banner').style.display = 'none';
   $('server-error').style.display = 'none';
   $('results').style.display = '';
+  $('btn-reset').style.display = 'flex';
 }
 
 function renderScheduleTable(data) {
@@ -1147,6 +1285,47 @@ async function download() {
 /* ═══════════════════════════════════════════════════════════════════════════
    Collapsible verification
 ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Reset
+═══════════════════════════════════════════════════════════════════════════ */
+function resetAll() {
+  // Reset state
+  _lastData = null;
+
+  // Hide results, show info
+  $('results').style.display = 'none';
+  $('info-banner').style.display = '';
+  $('server-error').style.display = 'none';
+  $('btn-reset').style.display = 'none';
+
+  // Reset sidebar inputs to defaults
+  $('inp-n').value = 6;
+  $('inp-nduo').value = 3;
+  $('inp-start').value = '09:00';
+  $('inp-gamemin').value = 20;
+  $('inp-switchmin').value = 5;
+  $('inp-seed').value = 42;
+  $('tog-teams').checked = true;
+  $('tog-duo').checked = true;
+  $('tog-solo').checked = true;
+  $('tog-break').checked = false;
+  $('inp-break-min').value = 15;
+  $('break-min-val').textContent = '15';
+  $('inp-break-after').value = 1;
+  $('break-section').style.display = 'none';
+
+  // Rebuild dynamic inputs
+  rebuildTeamNames();
+  updateGameFormula();
+  rebuildDuoNames();
+  rebuildSoloNames();
+  updateTimeCaption();
+  updateBreakCaption();
+
+  // Scroll to top
+  $('main').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 $('verif-hdr').addEventListener('click', () => {
   $('verif-hdr').classList.toggle('open');
   $('verif-body').classList.toggle('open');
@@ -1182,6 +1361,7 @@ $('inp-break-after').addEventListener('input', updateBreakCaption);
 $('inp-n').addEventListener('input', () => { updateBreakCaption(); }, true);
 $('btn-generate').addEventListener('click', generate);
 $('btn-download').addEventListener('click', download);
+$('btn-reset').addEventListener('click', resetAll);
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Init
