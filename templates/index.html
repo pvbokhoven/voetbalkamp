@@ -199,8 +199,7 @@
   #btn-generate {
     margin-top: .4rem;
     width: 100%;
-    height: 40px;
-    padding: 0 1rem;
+    padding: .85rem 1rem;
     background: #1e3a5f;
     color: #fff;
     border: none;
@@ -354,6 +353,18 @@
     color: #fff !important;
     font-weight: 700;
     border-color: #1e3a5f !important;
+  }
+
+  /* ── Break row ───────────────────────────────────────────────────────── */
+  tr.break-row td {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    font-weight: 700;
+    text-align: center;
+    border-top: 2px solid #f59e0b !important;
+    border-bottom: 2px solid #f59e0b !important;
+    font-size: .9rem;
+    letter-spacing: .02em;
   }
 
   /* ── Tabs (underline style) ───────────────────────────────────────────── */
@@ -563,6 +574,27 @@
       </div>
     </div>
     <div id="time-caption" class="caption"></div>
+
+    <hr class="divider">
+    <span class="section-label">Pauze</span>
+
+    <label class="toggle-label">
+      <input type="checkbox" id="tog-break">
+      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      <span class="toggle-text">Pauze invoegen</span>
+    </label>
+
+    <div id="break-section" style="display:none; margin-top:.5rem;">
+      <div style="margin-bottom:.6rem;">
+        <label for="inp-break-min">Duur: <strong id="break-min-val">15</strong> min</label>
+        <input type="range" id="inp-break-min" min="5" max="60" step="5" value="15" style="width:100%; margin-top:.25rem; accent-color:#2563eb;">
+      </div>
+      <div>
+        <label for="inp-break-after">Na ronde</label>
+        <input type="number" id="inp-break-after" min="1" max="19" value="1">
+        <div id="break-caption" class="caption"></div>
+      </div>
+    </div>
 
     <button id="btn-generate">Genereer schema</button>
 
@@ -815,15 +847,33 @@ function updateTimeCaption() {
   const start = $('inp-start').value || '09:00';
   const game_min = parseInt($('inp-gamemin').value) || 20;
   const switch_min = parseInt($('inp-switchmin').value) || 5;
+  const hasPauze = $('tog-break').checked;
+  const break_min = hasPauze ? (parseInt($('inp-break-min').value) || 15) : 0;
 
-  const total_min = n * (game_min + switch_min) - switch_min;
+  const total_min = n * (game_min + switch_min) - switch_min + break_min;
   const [hh, mm] = start.split(':').map(Number);
   const startTotal = hh * 60 + mm;
   const endTotal = startTotal + total_min;
   const endH = Math.floor(endTotal / 60) % 24;
   const endM = endTotal % 60;
+  const pauseStr = hasPauze ? ` (incl. ${break_min} min pauze)` : '';
   $('time-caption').textContent =
-    `Eindtijd: ${padTwo(endH)}:${padTwo(endM)} · Totaal: ${total_min} min`;
+    `Eindtijd: ${padTwo(endH)}:${padTwo(endM)} · Totaal: ${total_min} min${pauseStr}`;
+}
+
+function updateBreakCaption() {
+  const n = getN();
+  const max = Math.max(1, n - 1);
+  const after = Math.min(parseInt($('inp-break-after').value) || 1, max);
+  $('inp-break-after').max = max;
+  $('inp-break-after').value = after;
+  $('break-caption').textContent = `Na ronde ${after} van de ${n}`;
+}
+
+function toggleBreakSection() {
+  const show = $('tog-break').checked;
+  $('break-section').style.display = show ? '' : 'none';
+  updateTimeCaption();
 }
 
 function collectTeamNames() {
@@ -893,10 +943,16 @@ function renderResults(data) {
       tbl.className = 'team-table';
       tbl.innerHTML = `<thead><tr><th>Tijdslot</th><th>Spel</th><th>Tegenstander</th></tr></thead>`;
       const tbody = document.createElement('tbody');
-      schedule.forEach(row => {
+      schedule.forEach((row, i) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td class="idx-cell">${row.slot}</td><td>${row.game}</td><td>${row.opponent || '—'}</td>`;
         tbody.appendChild(tr);
+        if (data.break_after && data.break_min > 0 && (i + 1) === data.break_after) {
+          const br = document.createElement('tr');
+          br.className = 'break-row';
+          br.innerHTML = `<td colspan="3">☕&nbsp;&nbsp;PAUZE — ${data.break_min} minuten</td>`;
+          tbody.appendChild(br);
+        }
       });
       tbl.appendChild(tbody);
       const wrap = document.createElement('div');
@@ -934,6 +990,9 @@ function renderScheduleTable(data) {
   });
   html += '</tr></thead><tbody>';
 
+  const { break_after, break_min } = data;
+  const colspan = df_columns.length + 1;
+
   df_rows.forEach((row, i) => {
     html += `<tr><td class="idx-cell">${slot_labels[i]}</td>`;
     row.forEach((cell, j) => {
@@ -942,6 +1001,10 @@ function renderScheduleTable(data) {
       html += `<td${cls}>${cell}</td>`;
     });
     html += '</tr>';
+    // Insert break row after break_after rounds
+    if (break_after && break_min > 0 && (i + 1) === break_after) {
+      html += `<tr class="break-row"><td colspan="${colspan}">☕&nbsp;&nbsp;PAUZE — ${break_min} minuten</td></tr>`;
+    }
   });
 
   html += '</tbody>';
@@ -991,6 +1054,7 @@ async function generate() {
   btn.textContent = 'Bezig…';
   $('server-error').style.display = 'none';
 
+  const hasPauze = $('tog-break').checked;
   const payload = {
     n,
     seed:        parseInt($('inp-seed').value) || 42,
@@ -1002,6 +1066,8 @@ async function generate() {
     start_time:  $('inp-start').value || '09:00',
     game_min:    parseInt($('inp-gamemin').value) || 20,
     switch_min:  parseInt($('inp-switchmin').value) || 5,
+    break_after: hasPauze ? (parseInt($('inp-break-after').value) || 1) : null,
+    break_min:   hasPauze ? (parseInt($('inp-break-min').value) || 15) : 0,
   };
 
   try {
@@ -1107,6 +1173,13 @@ $('tog-solo').addEventListener('change', rebuildSoloNames);
 $('inp-start').addEventListener('input', updateTimeCaption);
 $('inp-gamemin').addEventListener('input', updateTimeCaption);
 $('inp-switchmin').addEventListener('input', updateTimeCaption);
+$('tog-break').addEventListener('change', toggleBreakSection);
+$('inp-break-min').addEventListener('input', () => {
+  $('break-min-val').textContent = $('inp-break-min').value;
+  updateTimeCaption();
+});
+$('inp-break-after').addEventListener('input', updateBreakCaption);
+$('inp-n').addEventListener('input', () => { updateBreakCaption(); }, true);
 $('btn-generate').addEventListener('click', generate);
 $('btn-download').addEventListener('click', download);
 
@@ -1118,6 +1191,7 @@ updateGameFormula();
 rebuildDuoNames();
 rebuildSoloNames();
 updateTimeCaption();
+updateBreakCaption();
 </script>
 </body>
 </html>
