@@ -166,13 +166,15 @@ def build_dataframe(square, team_names, duo_names, solo_names, slot_labels, n_du
 # Time labels
 # ─────────────────────────────────────────────────────────────────────────────
 
-def make_time_labels(n_slots, start, game_min, switch_min):
+def make_time_labels(n_slots, start, game_min, switch_min, break_after=None, break_min=0):
     labels = []
     t = start
-    for _ in range(n_slots):
+    for i in range(n_slots):
         end = t + timedelta(minutes=game_min)
         labels.append(f"{t.strftime('%H:%M')} – {end.strftime('%H:%M')}")
         t = end + timedelta(minutes=switch_min)
+        if break_after and break_min > 0 and (i + 1) == break_after:
+            t += timedelta(minutes=break_min)
     return labels
 
 
@@ -189,24 +191,45 @@ def _style_sheet(ws, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill
         ws.row_dimensions[r].height = 24
 
 
-def _write_simple_table(ws, headers, rows, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill, odd_fill):
-    """Write a simple table with header row + data rows (first col = index style)."""
+def _write_simple_table(ws, headers, rows, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill, odd_fill,
+                        break_after=None, break_min=0):
+    """Write a simple table with header row + data rows (first col = index style).
+    Optionally inserts a styled break row after break_after data rows."""
+    break_fill = PatternFill("solid", fgColor="FEF3C7")
+    break_font = Font(bold=True, color="92400E", size=11)
+    n_cols = len(headers)
+
     for j, h in enumerate(headers, 1):
         c = ws.cell(1, j, h)
         c.font = white_f; c.fill = hdr_fill; c.alignment = center; c.border = bdr
-    for i, row in enumerate(rows, 2):
-        row_fill = even_fill if i % 2 == 0 else odd_fill
+
+    ws_row = 2
+    for i, row in enumerate(rows):
+        row_fill = even_fill if ws_row % 2 == 0 else odd_fill
         for j, val in enumerate(row, 1):
-            c = ws.cell(i, j, val)
+            c = ws.cell(ws_row, j, val)
             if j == 1:
                 c.font = white_f; c.fill = idx_fill
             else:
                 c.font = body_f; c.fill = row_fill
             c.alignment = center; c.border = bdr
+        ws_row += 1
+
+        # Insert break row after break_after rounds (1-indexed)
+        if break_after and break_min > 0 and (i + 1) == break_after:
+            if n_cols > 1:
+                ws.merge_cells(start_row=ws_row, start_column=1, end_row=ws_row, end_column=n_cols)
+            c = ws.cell(ws_row, 1, f"☕  PAUZE — {break_min} minuten")
+            c.font = break_font; c.fill = break_fill
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            ws.row_dimensions[ws_row].height = 24
+            ws_row += 1
+
     _style_sheet(ws, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill, odd_fill)
 
 
-def to_excel(df, n_duo, square, slot_labels, team_names, duo_names, solo_names, n_solo, game_descriptions=None):
+def to_excel(df, n_duo, square, slot_labels, team_names, duo_names, solo_names, n_solo,
+             game_descriptions=None, break_after=None, break_min=0):
     wb = openpyxl.Workbook()
 
     hdr_fill  = PatternFill("solid", fgColor="1F4E79")
@@ -236,16 +259,30 @@ def to_excel(df, n_duo, square, slot_labels, team_names, duo_names, solo_names, 
         c.fill = solo_fill if is_solo else hdr_fill
         c.alignment = center; c.border = bdr
 
-    for i, (idx_val, row) in enumerate(df.iterrows(), 2):
-        row_fill = even_fill if i % 2 == 0 else odd_fill
-        ic = ws.cell(i, 1, idx_val)
+    break_fill = PatternFill("solid", fgColor="FEF3C7")
+    break_font = Font(bold=True, color="92400E", size=11)
+    n_cols = len(df.columns) + 1  # +1 for index column
+
+    ws_row = 2
+    for i, (idx_val, row) in enumerate(df.iterrows()):
+        row_fill = even_fill if ws_row % 2 == 0 else odd_fill
+        ic = ws.cell(ws_row, 1, idx_val)
         ic.font = white_f; ic.fill = idx_fill; ic.alignment = center; ic.border = bdr
         for j, val in enumerate(row, 2):
             is_solo = (j - 2) >= n_duo
-            c = ws.cell(i, j, val)
+            c = ws.cell(ws_row, j, val)
             c.font = body_f
             c.fill = solo_fill if is_solo else row_fill
             c.alignment = center; c.border = bdr
+        ws_row += 1
+
+        if break_after and break_min > 0 and (i + 1) == break_after:
+            ws.merge_cells(start_row=ws_row, start_column=1, end_row=ws_row, end_column=n_cols)
+            c = ws.cell(ws_row, 1, f"☕  PAUZE — {break_min} minuten")
+            c.font = break_font; c.fill = break_fill
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            ws.row_dimensions[ws_row].height = 24
+            ws_row += 1
 
     _style_sheet(ws, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill, odd_fill)
 
@@ -270,7 +307,8 @@ def to_excel(df, n_duo, square, slot_labels, team_names, duo_names, solo_names, 
                 t = team_names[square[i][2 * n_duo + solo_idx]]
                 rows.append([label, t, ""])
 
-        _write_simple_table(ws, headers, rows, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill, odd_fill)
+        _write_simple_table(ws, headers, rows, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill, odd_fill,
+                            break_after=break_after, break_min=break_min)
 
         # Add description below the table
         if game_descriptions and game_descriptions.get(game_name, "").strip():
@@ -306,7 +344,8 @@ def to_excel(df, n_duo, square, slot_labels, team_names, duo_names, solo_names, 
                 solo_idx = pos - 2 * n_duo
                 rows.append([label, solo_names[solo_idx], ""])
 
-        _write_simple_table(ws, headers, rows, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill, odd_fill)
+        _write_simple_table(ws, headers, rows, hdr_fill, idx_fill, white_f, body_f, center, bdr, even_fill, odd_fill,
+                            break_after=break_after, break_min=break_min)
 
     buf = BytesIO()
     wb.save(buf)
@@ -346,6 +385,8 @@ def api_generate():
     start_time  = data.get("start_time", "09:00")
     game_min    = int(data.get("game_min", 20))
     switch_min  = int(data.get("switch_min", 5))
+    break_after = int(data["break_after"]) if data.get("break_after") else None
+    break_min   = int(data.get("break_min", 0))
 
     # Validate
     errors = []
@@ -376,11 +417,11 @@ def api_generate():
     # Generate
     square = generate_latin_square(n, seed=seed)
     square = optimize_column_pairing(square, n_duo, n_solo, seed=seed)
-    slot_labels = make_time_labels(n, start_dt, game_min, switch_min)
+    slot_labels = make_time_labels(n, start_dt, game_min, switch_min, break_after=break_after, break_min=break_min)
     df = build_dataframe(square, team_names, duo_names, solo_names, slot_labels, n_duo, n_solo)
 
-    # Compute end time
-    total_min = n * (game_min + switch_min) - switch_min
+    # Compute end time (including break)
+    total_min = n * (game_min + switch_min) - switch_min + (break_min if break_after and break_min else 0)
     end_dt = start_dt + timedelta(minutes=total_min)
 
     # Latin square display values (1-based)
@@ -431,6 +472,8 @@ def api_generate():
         "ls_col_sums":  ls_col_sums,
         "ls_row_sums":  ls_row_sums,
         "team_schedules": team_schedules,
+        "break_after":  break_after,
+        "break_min":    break_min,
     })
 
 
@@ -449,6 +492,8 @@ def api_download():
     solo_names       = data.get("solo_names", [])
     game_descriptions = data.get("game_descriptions", {})
     file_name        = data.get("file_name", "spellenschema")
+    break_after      = int(data["break_after"]) if data.get("break_after") else None
+    break_min        = int(data.get("break_min", 0))
 
     if not square or not slot_labels or not df_columns or df_rows is None:
         return jsonify({"error": "Ontbrekende gegevens voor download."}), 400
@@ -460,7 +505,7 @@ def api_download():
     excel_bytes = to_excel(
         df, n_duo, square, slot_labels,
         team_names, duo_names, solo_names, n_solo,
-        game_descriptions,
+        game_descriptions, break_after=break_after, break_min=break_min,
     )
 
     safe_name = file_name.strip() or "spellenschema"
