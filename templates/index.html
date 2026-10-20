@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Voetbalkamp Schema Generator</title>
-<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="icon" type="image/png" href="https://van--bokhoven.com/peter_avatar.png">
+<script src="https://van--bokhoven.com/shared/footer.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -559,6 +560,10 @@
     .sidebar-content { padding-bottom: 1.25rem; }
     #main { padding: 1.25rem 1rem; }
   }
+
+  /* Gedeelde footer onderaan het hoofdpaneel, over de volle breedte */
+  #main pvb-footer { margin: 2rem -2.5rem -2rem; }
+  @media (max-width: 768px) { #main pvb-footer { margin: 1.25rem -1rem -1.25rem; } }
 </style>
 </head>
 <body>
@@ -809,6 +814,7 @@
     </div>
 
   </div><!-- /#results -->
+  <pvb-footer></pvb-footer>
 </main>
 
 <script>
